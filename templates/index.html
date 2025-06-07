@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Firecrawl Website Crawler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="text"], input[type="number"], input[type="url"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            margin-top: 15px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .help-text {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 Firecrawl Website Crawler</h1>
+            <p>Transform websites into clean markdown files</p>
+        </div>
+        
+        <div class="content">
+            <form id="crawlForm">
+                <div class="form-group">
+                    <label for="url">Website URL</label>
+                    <input type="url" id="url" name="url" placeholder="https://example.com" required>
+                    <div class="help-text">Enter the website URL you want to crawl</div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="depth">Crawl Depth</label>
+                        <input type="number" id="depth" name="depth" value="2" min="0" max="10" required>
+                        <div class="help-text">How deep to crawl (0-10)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="max_pages">Max Pages</label>
+                        <input type="number" id="max_pages" name="max_pages" value="50" min="1" max="1000" required>
+                        <div class="help-text">Maximum pages to crawl (1-1000)</div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn" id="submitBtn">
+                    🚀 Start Crawling
+                </button>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Crawling website... This may take a few minutes.</p>
+            </div>
+            
+            <div class="result" id="result">
+                <div id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('crawlForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = '🔄 Crawling...';
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            // Get form data
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('/crawl', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Success
+                    result.className = 'result success';
+                    resultContent.innerHTML = `
+                        <h3>✅ ${data.message}</h3>
+                        <div class="stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${data.stats.total_pages}</div>
+                                <div class="stat-label">Pages Found</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${data.stats.credits_used}</div>
+                                <div class="stat-label">Credits Used</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${data.stats.status}</div>
+                                <div class="stat-label">Status</div>
+                            </div>
+                        </div>
+                        <a href="${data.download_url}" class="btn download-btn">
+                            📥 Download ZIP (${data.zip_filename})
+                        </a>
+                    `;
+                } else {
+                    // Error
+                    result.className = 'result error';
+                    resultContent.innerHTML = `
+                        <h3>❌ Crawl Failed</h3>
+                        <p>${data.detail || 'An unexpected error occurred.'}</p>
+                    `;
+                }
+                
+            } catch (error) {
+                // Network or other error
+                result.className = 'result error';
+                resultContent.innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p>Failed to connect to server: ${error.message}</p>
+                `;
+            } finally {
+                // Reset UI
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Start Crawling';
+                loading.style.display = 'none';
+                result.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html> 
