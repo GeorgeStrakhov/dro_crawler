@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 from typing import Optional
 
 from fastapi import FastAPI, Form, HTTPException, Depends, Request
+from starlette.background import BackgroundTask
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
@@ -108,11 +109,17 @@ async def start_crawl(
         shutil.rmtree(output_dir)
         
         # Return the ZIP file as a download
+        def cleanup_temp_file():
+            try:
+                os.unlink(temp_zip_path)
+            except FileNotFoundError:
+                pass  # File already deleted
+        
         return FileResponse(
             path=temp_zip_path,
             filename=zip_filename,
             media_type='application/zip',
-            background=lambda: os.unlink(temp_zip_path)  # Clean up temp file after sending
+            background=BackgroundTask(cleanup_temp_file)
         )
         
     except Exception as e:
