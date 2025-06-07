@@ -275,33 +275,37 @@
                     body: formData
                 });
                 
-                const data = await response.json();
-                
-                if (response.ok && data.success) {
-                    // Success
+                if (response.ok && response.headers.get('content-type') === 'application/zip') {
+                    // Success - got a zip file
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    
+                    // Get filename from Content-Disposition header or use default
+                    const contentDisposition = response.headers.get('content-disposition');
+                    let filename = 'crawl_results.zip';
+                    if (contentDisposition) {
+                        const matches = contentDisposition.match(/filename="(.+)"/);
+                        if (matches) filename = matches[1];
+                    }
+                    
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    // Show success message
                     result.className = 'result success';
                     resultContent.innerHTML = `
-                        <h3>✅ ${data.message}</h3>
-                        <div class="stats">
-                            <div class="stat-item">
-                                <div class="stat-value">${data.stats.total_pages}</div>
-                                <div class="stat-label">Pages Found</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">${data.stats.credits_used}</div>
-                                <div class="stat-label">Credits Used</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">${data.stats.status}</div>
-                                <div class="stat-label">Status</div>
-                            </div>
-                        </div>
-                        <a href="${data.download_url}" class="btn download-btn">
-                            📥 Download ZIP (${data.zip_filename})
-                        </a>
+                        <h3>✅ Crawl completed successfully!</h3>
+                        <p>Your ZIP file <strong>${filename}</strong> has been downloaded automatically.</p>
+                        <p>If the download didn't start, check your browser's download settings.</p>
                     `;
                 } else {
-                    // Error
+                    // Error response
+                    const data = await response.json();
                     result.className = 'result error';
                     resultContent.innerHTML = `
                         <h3>❌ Crawl Failed</h3>

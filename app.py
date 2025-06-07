@@ -75,7 +75,7 @@ async def start_crawl(
     max_pages: int = Form(50),
     username: str = Depends(verify_password)
 ):
-    """Start the crawl process and return download link."""
+    """Start the crawl process and return the ZIP file immediately."""
     
     # Validate inputs
     if depth < 0 or depth > 10:
@@ -91,49 +91,34 @@ async def start_crawl(
         # Perform the crawl
         crawl_result, output_dir = crawl_website(url, depth, max_pages)
         
-        # Create zip file
+        # Create zip file in memory/temp location
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         domain = urlparse(url).netloc.replace('.', '_').replace(':', '_')
         zip_filename = f"{domain}_{timestamp}.zip"
-        zip_path = Path("downloads") / zip_filename
         
-        # Create downloads directory
-        zip_path.parent.mkdir(exist_ok=True)
+        # Create a temporary zip file
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_zip:
+            temp_zip_path = Path(temp_zip.name)
         
         # Create the zip file
-        create_zip_from_directory(output_dir, zip_path)
+        create_zip_from_directory(output_dir, temp_zip_path)
         
-        # Clean up the original directory
+        # Clean up the original directory immediately
         shutil.rmtree(output_dir)
         
-        return {
-            "success": True,
-            "message": f"Crawl completed successfully! Found {getattr(crawl_result, 'total', 0)} pages.",
-            "download_url": f"/download/{zip_filename}",
-            "zip_filename": zip_filename,
-            "stats": {
-                "status": getattr(crawl_result, 'status', 'unknown'),
-                "total_pages": getattr(crawl_result, 'total', 0),
-                "credits_used": getattr(crawl_result, 'creditsUsed', 0)
-            }
-        }
+        # Return the ZIP file as a download
+        return FileResponse(
+            path=temp_zip_path,
+            filename=zip_filename,
+            media_type='application/zip',
+            background=lambda: os.unlink(temp_zip_path)  # Clean up temp file after sending
+        )
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Crawl failed: {str(e)}")
 
-@app.get("/download/{filename}")
-async def download_file(filename: str, username: str = Depends(verify_password)):
-    """Download the crawled files as a zip."""
-    file_path = Path("downloads") / filename
-    
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    return FileResponse(
-        path=file_path,
-        filename=filename,
-        media_type='application/zip'
-    )
+# Download endpoint removed - files are now returned immediately
 
 @app.get("/health")
 async def health_check():
